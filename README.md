@@ -14,7 +14,8 @@ make
 mpirun -np <num_cpus> midpoint_approx_pi
 ```
 
-2. `self_schedule_matrix_vector_multiply` (3.6): Calculate $c = A \times b$,
+2. `self_schedule_matrix_vector_multiply` (3.6): Calculate `c = A \times b`,
     matrix and vectors are stored as vectors because boost::multi_array has
     no serialization definitions (something I need to learn about apparently).
-    I am at the testing operations with vector<vector <double>> in Boost::MPI.
+    The initial code is done, next step is to ensure correctness and try to
+    add more modern c++ aspects.
