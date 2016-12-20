@@ -23,7 +23,7 @@ int main()
   const int rows{100}, cols{100};
   Matrix A(rows, Vector(cols));
   Vector b(cols), c(cols), buffer(cols);
-  mpi::status s;
+  mpi::status status;
   int row;
   double result;
 
@@ -60,18 +60,18 @@ int main()
     }
     // For each worker, recieve result, send rank more work
     for (int i = 0; i < rows; ++i) {
-      s = world.recv(mpi::any_source, i, result);
+      status = world.recv(mpi::any_source, i, result);
       c[i] = result;
       if (cols_sent < rows) {
         // Allocate new buffer, and send more work
         for (int j = 0; j < rows; ++j) {
           buffer[j] = A[i][j];
         }
-        world.send(s.source(), cols_sent, buffer);
+        world.send(status.source(), cols_sent, buffer);
         cols_sent += 1;
       }
       else {
-        world.send(s.source(), env.max_tag(), buffer);
+        world.send(status.source(), env.max_tag(), buffer);
       }
     }
   }
@@ -80,9 +80,10 @@ int main()
     // Workers should continue running until they recieve the stop signal
     bool keepRunning{true};
     while (keepRunning) {
-      // Get any_tag sending a buffer, the tag is the row
-      s = world.recv(0, mpi::any_tag, buffer);
-      row = s.tag();
+      // Get any_tag sending a buffer, the tag is the row (it's not necessary
+      // -> to know, but I moved forward with this tagging scheme)
+      status = world.recv(0, mpi::any_tag, buffer);
+      row = status.tag();
       // If the tag is the max tag, stop running, otherwise do work and send
       // -> result back
       if (row == env.max_tag()) {
