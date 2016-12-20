@@ -21,36 +21,90 @@ int main()
 
   // Variables and multi_array definitions
   const int rows{100}, cols{100};
-  Vector a(cols), c(cols);
-  Matrix B(rows, Vector(cols));
+  Matrix A(rows, Vector(cols));
+  Vector b(cols), c(cols), buffer(cols);
+  mpi::status s;
+  int row;
+  double result;
 
   // Start the timer
   mpi::timer timer;
 
-  // Rank 0 is our manager, every one else is a worker.
+  // Initialize on Rank 0 and broadcast column vector
   if (world.rank() == 0) {
     // Initialize a, B, and c to 0.0
     for (int i = 0; i < cols; ++i) {
-      a[i] = i;
-      c[i] = 1.0;
+      b[i] = i;
+      c[i] = 0.0;
       for (int j = 0; j < rows; ++j) {
-        B[j][i] = j;
+        A[i][j] = j;
       }
     }
-
-    // Test send Matrix
-    world.send(1, 0, B);
   }
+  mpi::broadcast(world, b, 0);
+
+
+  // Rank 0 is our manager, every one else is a worker.
+  if (world.rank() == 0) {
+    // Our column counter
+    int cols_sent = 0;
+
+    // Send row to each worker process, cols_sent tells us what work is left
+    for (int i = 0; i < min(world.size() - 1, rows); ++i) {
+      for (int j = 0; j < cols; ++j) {
+        buffer[j] = A[i][j];
+      }
+      // Send buffer to rank i + 1 with tag i.
+      world.send(i + 1, i, buffer);
+      cols_sent += 1;
+    }
+    // For each worker, recieve result, send rank more work
+    for (int i = 0; i < rows; ++i) {
+      s = world.recv(mpi::any_source, i, result);
+      c[i] = result;
+      if (cols_sent < rows) {
+        // Allocate new buffer, and send more work
+        for (int j = 0; j < rows; ++j) {
+          buffer[j] = A[i][j];
+        }
+        world.send(s.source(), cols_sent, buffer);
+        cols_sent += 1;
+      }
+      else {
+        world.send(s.source(), env.max_tag(), buffer);
+      }
+    }
+  }
+  // Worker Code
   else {
-    Matrix B(rows, Vector(cols));
-    // Test receive Matrix
-    world.recv(0, 0, B);
-    cout << boost::format("B[4][4] is %.16f on rank %i\n") % B[4][4] % world.rank();
+    // Workers should continue running until they recieve the stop signal
+    bool keepRunning{true};
+    while (keepRunning) {
+      // Get any_tag sending a buffer, the tag is the row
+      s = world.recv(0, mpi::any_tag, buffer);
+      row = s.tag();
+      // If the tag is the max tag, stop running, otherwise do work and send
+      // -> result back
+      if (row == env.max_tag()) {
+        keepRunning = false;
+      }
+      else {
+        // Multiply the buffer with b, and send result
+        result = 0;
+        for (int j = 0; j < rows; ++j) {
+          result += buffer[j] * b[j];
+        }
+        world.send(0, row, result);
+      }
+    }
   }
 
-  // Print the approx_pi and elapsed time
+  // Print the elapsed time and c.
   if (world.rank() == 0) {
     cout << boost::format("-> Elapsed time %.16fs\n") % timer.elapsed();
+    for (int j = 0; j < rows; ++j) {
+      cout << boost::format("c[%i] = %.16f\n") % j % c[j];
+    }
   }
 
   return 0;
