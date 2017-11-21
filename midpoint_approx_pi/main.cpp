@@ -14,7 +14,7 @@ int main()
   mpi::communicator world;
 
   // A lambda expression to approximate pi
-  auto approx = [](double a){return 4.0 / (1.0 + a * a);};
+  auto approx = [](double a){ return 4.0 / (1.0 + a * a); };
 
   // Some constants and other variables
   const double exact_pi{4.0 * atan(1.0)};

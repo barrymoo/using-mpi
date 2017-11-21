@@ -20,7 +20,7 @@ int main()
   typedef vector<vector <double>> Matrix;
 
   // Variables and multi_array definitions
-  const int rows{100}, cols{100};
+  const int rows{10}, cols{10};
   Matrix A(rows, Vector(cols));
   Vector b(cols), c(cols), buffer(cols);
   mpi::status status;
@@ -37,7 +37,7 @@ int main()
       b[i] = i;
       c[i] = 0.0;
       for (int j = 0; j < rows; ++j) {
-        A[i][j] = j;
+        A[i][j] = i;
       }
     }
   }
@@ -65,7 +65,7 @@ int main()
       if (cols_sent < rows) {
         // Allocate new buffer, and send more work
         for (int j = 0; j < rows; ++j) {
-          buffer[j] = A[i][j];
+          buffer[j] = A[cols_sent][j];
         }
         world.send(status.source(), cols_sent, buffer);
         cols_sent += 1;

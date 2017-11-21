@@ -2,16 +2,27 @@ cmake_minimum_required(VERSION 3.6)
 project(self_schedule_matrix_vector_multiply)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_COMPILER "mpicxx")
 
 find_package(MPI REQUIRED)
 find_package(Boost COMPONENTS mpi serialization REQUIRED)
 
-set(SOURCE_FILES main.cpp)
-add_executable(${CMAKE_PROJECT_NAME} ${SOURCE_FILES})
+set(WITH_VECTOR_FILES with-vector.cpp)
+add_executable(with-vector ${WITH_VECTOR_FILES})
 
-target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
+target_include_directories(with-vector PUBLIC
         ${MPI_INCLUDE_PATH}
         ${Boost_INCLUDE_DIRS}
 )
 
-target_link_libraries(${CMAKE_PROJECT_NAME} ${Boost_LIBRARIES})
+target_link_libraries(with-vector ${Boost_LIBRARIES})
+
+set(WITH_MA_FILES with-multi-array.cpp)
+add_executable(with-ma ${WITH_MA_FILES})
+
+target_include_directories(with-ma PUBLIC
+        ${MPI_INCLUDE_PATH}
+        ${Boost_INCLUDE_DIRS}
+)
+
+target_link_libraries(with-ma ${Boost_LIBRARIES})
