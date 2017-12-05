@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.6)
 project(self_schedule_matrix_matrix_multiply)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 set(CMAKE_CXX_COMPILER "mpicxx")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 find_package(MPI REQUIRED)
 find_package(Boost COMPONENTS mpi serialization REQUIRED)

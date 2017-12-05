@@ -3,27 +3,14 @@
 #include <boost/mpi/timer.hpp>
 #include <boost/format.hpp>
 
-typedef boost::multi_array<double, 1> vector_d;
-typedef vector_d::index vector_d_index;
-
-typedef boost::multi_array<double, 2> matrix_2_d;
-typedef matrix_2_d::index matrix_2_d_index;
-
 namespace boost {
 namespace serialization {
-    template <class Archive>
-    void serialize(Archive &ar, vector_d &v, const unsigned int version) {
-        for (auto i = 0; i < v.num_elements(); ++i) {
-            ar & v.data()[i];
+    template <class Archive, class T, size_t N>
+    void serialize(Archive &ar, multi_array<T, N> &ma, const unsigned int version) {
+        for (auto i = 0; i < ma.num_elements(); ++i) {
+            ar & ma.data()[i];
         }
     }
-
-//    template <class Archive>
-//    void serialize(Archive &ar, matrix_2_d &m, const unsigned int version) {
-//        for (auto i = 0; i < m.num_elements(); ++i) {
-//            ar & m.data()[i];
-//        }
-//    }
 } // namespace serialization
 } // namespace boost
 
@@ -35,10 +22,13 @@ int main(void) {
 
     const int rows{10}, cols{10};
     mpi::status status;
-    double result{0};
+    double result{0.0};
     int row{0};
-    vector_d b(boost::extents[cols]), c(boost::extents[cols]), buffer(boost::extents[cols]) ;
-    matrix_2_d A(boost::extents[rows][cols]);
+
+    using boost::multi_array;
+    using boost::extents;
+    multi_array<double, 1> b(extents[cols]), c(extents[cols]), buffer(extents[cols]) ;
+    multi_array<double, 2> A(extents[rows][cols]);
 
     // Start the Timer
     mpi::timer timer;
